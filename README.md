@@ -25,22 +25,73 @@ This is a minimal .NET 8 Web API project containing `InsuranceSvgController` tha
   "Color": "#2c8592",
   "DotFill": "#c9e04a",
   "Lang": "th",
-  "ZigzagAtIndices": [4,5,7],
   "ZigzagMaxAmplitude": 20.0,
+  "PixelRatio": 1.0,
   "Data": [
-    {"Id":"1","Label":"1","Year":"1","Next":1},
-    {"Id":"2","Label":"2","Year":"2","Next":1},
-    {"Id":"5","Label":"5","Year":"5","Next":1},
-    {"Id":"10","Label":"10","Year":"10","Next":1},
-    {"Id":"15","Label":"15","Year":"15","Next":1},
-    {"Id":"20","Label":"20","Year":"20","Next":1},
-    {"Id":"60","Major":true,"Year":"A60","Next":1},
-    {"Id":"70","Major":true,"Year":"A70","Next":1},
-    {"Id":"80","Major":true,"Year":"A80","Next":1},
-    {"Id":"90","Major":true,"Value":"150,000","Year":"A90","Next":1,"LastPayment":true}
+    {
+      "Id": "1",
+      "Label": "1",
+      "Year": "1",
+      "Next": 1
+    },
+    {
+      "Id": "2",
+      "Label": "2",
+      "Year": "2",
+      "Next": 1
+    },
+    {
+      "Id": "5",
+      "Label": "5",
+      "Year": "5",
+      "Next": 1
+    },
+    {
+      "Id": "10",
+      "Label": "10",
+      "Year": "10",
+      "Next": 1
+    },
+    {
+      "Id": "15",
+      "Label": "15",
+      "Year": "15",
+      "Next": 1
+    },
+    {
+      "Id": "20",
+      "Major": true,
+      "Label": "20",
+      "Year": "20",
+      "Next": 1
+    },
+    {
+      "Id": "60",
+      "Major": true,
+      "Year": "A60",
+      "Next": 1
+    },
+    {
+      "Id": "70",
+      "Major": true,
+      "Year": "A70",
+      "Next": 1
+    },
+    {
+      "Id": "80",
+      "Major": true,
+      "Year": "A80",
+      "Next": 1
+    },
+    {
+      "Id": "90",
+      "Value": "150,000",
+      "Year": "A90",
+      "Next": 1,
+      "LastPayment": true
+    }
   ]
 }
-
 ```
 
 ## Notes

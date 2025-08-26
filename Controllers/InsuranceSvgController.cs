@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Text;
 using System.Linq;
 using System.Collections.Generic;
+using System.IO;
 using SkiaSharp;
 using Svg.Skia;
 
@@ -35,14 +37,16 @@ namespace TimelineChartAPI.Controllers
             public string Lang { get; set; } = "th";
             public int Width { get; set; } = 800;
 
-            // New: indices (0-based) where we want zigzag segments
-            public List<int>? ZigzagAtIndices { get; set; } = new List<int> { 4, 5, 7 };
-
-            // New: maximum amplitude (px) for zigzag calculation
+            // maximum amplitude (px) for zigzag calculation
             public double ZigzagMaxAmplitude { get; set; } = 20.0;
+
+            // pixel ratio for HiDPI output (1 = 1:1, 2 = retina)
+            public float PixelRatio { get; set; } = 1f;
+
+            public string? FontPath { get; set; } = Path.Combine(AppContext.BaseDirectory, "Fonts", "THSarabun.ttf");
         }
 
-        // Internal typed point (no anonymous types)
+        // Internal typed point class
         private class PointPos
         {
             public DataPoint Point { get; set; } = new DataPoint();
@@ -57,11 +61,11 @@ namespace TimelineChartAPI.Controllers
             try
             {
                 var svg = GenerateSvg(request);
-                var pngBytes = ConvertSvgToPng(svg, request.Width, request.Height);
+                var pngBytes = ConvertSvgToPng(svg, request.Width, request.Height, request.PixelRatio);
 
                 return File(pngBytes, "image/png", "timeline-chart.png");
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 return BadRequest($"Error generating chart: {ex.Message}");
             }
@@ -75,7 +79,7 @@ namespace TimelineChartAPI.Controllers
                 var svg = GenerateSvg(request);
                 return Content(svg, "image/svg+xml");
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 return BadRequest($"Error generating SVG: {ex.Message}");
             }
@@ -91,8 +95,8 @@ namespace TimelineChartAPI.Controllers
             var dotFill = request.DotFill;
             var lang = request.Lang;
 
-            var zigzagIndices = new HashSet<int>(request.ZigzagAtIndices ?? new List<int>());
             var zigzagMaxAmp = request.ZigzagMaxAmplitude;
+            var fontPath = request.FontPath;
 
             // Text content based on language
             var textContent = new Dictionary<string, string>
@@ -104,9 +108,9 @@ namespace TimelineChartAPI.Controllers
                 ["or"] = lang == "th" ? "หรือ มูลค่าเวนคืนเงินสด หรือ เบี้ยประกันภัยสะสม" : "or Cash Value or Accumulated Premium"
             };
 
-            var centerY = System.Math.Round((double)height / 2 + 20);
-            var availableW = System.Math.Max(200, width - marginHorizontal * 2);
-            var gap = (double)availableW / System.Math.Max(1, data.Count - 1);
+            var centerY = Math.Round((double)height / 2 + 20);
+            var availableW = Math.Max(200, width - marginHorizontal * 2);
+            var gap = (double)availableW / Math.Max(1, data.Count - 1);
 
             var dotRadius = 8;
             var strokeWidth = 3;
@@ -123,12 +127,40 @@ namespace TimelineChartAPI.Controllers
             }).ToList();
 
             var svg = new StringBuilder();
-            svg.AppendLine($"<svg width=\"{width}\" height=\"{height}\" xmlns=\"http://www.w3.org/2000/svg\">");
+
+            // Try to embed font if provided (base64)
+            string fontStyle = "";
+            if (!string.IsNullOrEmpty(fontPath))
+            {
+                try
+                {
+                    var b64 = EmbedFontBase64(fontPath);
+                    if (!string.IsNullOrEmpty(b64))
+                    {
+                        // Use a fixed family name so CSS can reference it
+                        fontStyle = $"<style>@font-face{{font-family:'EmbeddedFont';src:url('data:font/truetype;charset=utf-8;base64,{b64}') format('truetype');}} text{{font-family:'EmbeddedFont', sans-serif;}}</style>";
+                    }
+                }
+                catch
+                {
+                    // If embedding fails, silently ignore and fall back to system fonts
+                    fontStyle = "";
+                }
+            }
+
+            // add viewBox & preserveAspectRatio so SKSvg can infer proper bounds
+            svg.AppendLine($"<svg width=\"{width}\" height=\"{height}\" viewBox=\"0 0 {width} {height}\" preserveAspectRatio=\"xMidYMid meet\" xmlns=\"http://www.w3.org/2000/svg\">");
+
+            // insert font style (if any)
+            if (!string.IsNullOrEmpty(fontStyle))
+            {
+                svg.AppendLine(fontStyle);
+            }
 
             // Background
             svg.AppendLine($"<rect width=\"{width}\" height=\"{height}\" fill=\"#f8f9fa\"/>");
 
-            // Main Title
+            // Main Title (will use embedded font via CSS)
             svg.AppendLine($"<text x=\"{width / 2}\" y=\"25\" font-size=\"16\" font-weight=\"600\" text-anchor=\"middle\" fill=\"#333\">");
             svg.AppendLine($"{textContent["coverage"]}");
             svg.AppendLine("</text>");
@@ -138,8 +170,8 @@ namespace TimelineChartAPI.Controllers
             svg.AppendLine($"{textContent["or"]}");
             svg.AppendLine("</text>");
 
-            // Generate zigzag path with configurable indices
-            var pathD = GenerateZigzagPath(points, centerY, gap, zigzagIndices, zigzagMaxAmp);
+            // Generate zigzag path with configurable indices (now using Major==true condition)
+            var pathD = GenerateZigzagPath(points, centerY, gap, zigzagMaxAmp);
             svg.AppendLine($"<path d=\"{pathD}\" stroke=\"{color}\" stroke-width=\"{strokeWidth}\" fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>");
 
             // Data points
@@ -155,25 +187,25 @@ namespace TimelineChartAPI.Controllers
                 // Year labels below points
                 var labelY = p.Year?.Contains('A') == true ? y + 40 : y + 25;
                 var yearText = p.Year?.Replace("A", "") ?? "";
-                svg.AppendLine($"<text x=\"{x}\" y=\"{labelY}\" font-size=\"{smallFont}\" text-anchor=\"middle\" fill=\"#333\">{yearText}</text>");
+                svg.AppendLine($"<text x=\"{x}\" y=\"{labelY}\" font-size=\"{smallFont}\" text-anchor=\"middle\" fill=\"#333\">{EscapeXml(yearText)}</text>");
 
                 // Age labels for major points
                 if (p.Year?.Contains('A') == true)
                 {
-                    svg.AppendLine($"<text x=\"{x}\" y=\"{y + 25}\" font-size=\"{smallFont - 2}\" text-anchor=\"middle\" fill=\"#333\">{textContent["atAge"]}</text>");
+                    svg.AppendLine($"<text x=\"{x}\" y=\"{y + 25}\" font-size=\"{smallFont - 2}\" text-anchor=\"middle\" fill=\"#333\">{EscapeXml(textContent["atAge"])}</text>");
                 }
 
                 // Amount labels for points with level
                 if (p.Level.HasValue && p.Level >= 0 && !string.IsNullOrEmpty(p.AmountLabel))
                 {
                     var amountY = y - 40 - (p.Level.Value * 20);
-                    svg.AppendLine($"<text x=\"{x}\" y=\"{amountY}\" font-size=\"{smallFont}\" font-weight=\"700\" text-anchor=\"middle\" fill=\"#333\">{p.AmountLabel}</text>");
+                    svg.AppendLine($"<text x=\"{x}\" y=\"{amountY}\" font-size=\"{smallFont}\" font-weight=\"700\" text-anchor=\"middle\" fill=\"#333\">{EscapeXml(p.AmountLabel)}</text>");
                 }
             }
 
             // Y-axis label
             svg.AppendLine($"<text x=\"15\" y=\"{centerY}\" font-size=\"{fontSize}\" font-weight=\"600\" text-anchor=\"middle\" fill=\"#333\" transform=\"rotate(-90 15 {centerY})\">");
-            svg.AppendLine($"{textContent["xAxisLabel"]}");
+            svg.AppendLine($"{EscapeXml(textContent["xAxisLabel"])}");
             svg.AppendLine("</text>");
 
             // Arrow and final value for last payment point
@@ -190,10 +222,10 @@ namespace TimelineChartAPI.Controllers
                 svg.AppendLine($"<polygon points=\"{x - 6},{y - 23} {x + 6},{y - 23} {x},{y - 15}\" fill=\"#1b1b1bff\"/>");
 
                 // Value above arrow
-                svg.AppendLine($"<text x=\"{x}\" y=\"52\" font-size=\"16\" font-weight=\"700\" text-anchor=\"middle\" fill=\"#333\">{lastPaymentPoint.Point.Value}</text>");
+                svg.AppendLine($"<text x=\"{x}\" y=\"52\" font-size=\"16\" font-weight=\"700\" text-anchor=\"middle\" fill=\"#333\">{EscapeXml(lastPaymentPoint.Point.Value)}</text>");
 
                 // Label below the last point
-                svg.AppendLine($"<text x=\"{x}\" y=\"{y + 60}\" font-size=\"{smallFont}\" text-anchor=\"middle\" fill=\"#333\">{textContent["premiumEnd"]}</text>");
+                svg.AppendLine($"<text x=\"{x}\" y=\"{y + 60}\" font-size=\"{smallFont}\" text-anchor=\"middle\" fill=\"#333\">{EscapeXml(textContent["premiumEnd"])}</text>");
             }
 
             // Left arrow indicator
@@ -209,8 +241,8 @@ namespace TimelineChartAPI.Controllers
             return svg.ToString();
         }
 
-        // Now accepts typed list + configurable zigzag indices & amplitude
-        private string GenerateZigzagPath(List<PointPos> points, double centerY, double gap, HashSet<int> zigzagIndices, double zigzagMaxAmplitude)
+        // Produce zigzag for segments where previous point has Major == true
+        private string GenerateZigzagPath(List<PointPos> points, double centerY, double gap, double zigzagMaxAmplitude)
         {
             if (points == null || points.Count == 0) return "";
 
@@ -226,17 +258,16 @@ namespace TimelineChartAPI.Controllers
                 var segmentLength = x1 - x0;
                 var baseY = centerY;
 
-                // If this segment index (i) is configured for zigzag -> produce zigzag pattern
-                if (zigzagIndices.Contains(i))
+                // Produce zigzag if the previous point is marked Major
+                if (prev.Point != null && prev.Point.Major)
                 {
-                    var maxAmplitude = System.Math.Min(zigzagMaxAmplitude, gap * 0.4);
-                    var straightLength = System.Math.Min(maxAmplitude, segmentLength / 6.0);
-                    var zigzagWidth = System.Math.Max(0, segmentLength - 2 * straightLength);
-                    // We'll produce 3 peaks (6 segments) as before but adapt to available width
+                    var maxAmplitude = Math.Min(zigzagMaxAmplitude, gap * 0.4);
+                    var straightLength = Math.Min(maxAmplitude, segmentLength / 6.0);
+                    var zigzagWidth = Math.Max(0, segmentLength - 2 * straightLength);
                     var ampX = zigzagWidth / 6.0;
-                    var ampY = ampX; // square-ish amplitude
+                    var ampY = ampX;
 
-                    var p1 = x0 + straightLength + ampX * 0;
+                    var p1 = x0 + straightLength;
                     var peakX = p1 + ampX;
                     var p2 = peakX + ampX;
                     var troughX = p2 + ampX;
@@ -280,26 +311,69 @@ namespace TimelineChartAPI.Controllers
             };
         }
 
-        private byte[] ConvertSvgToPng(string svgContent, int width, int height)
+        // Convert SVG string to PNG bytes, scaling picture to fit target size & pixel ratio
+        private byte[] ConvertSvgToPng(string svgContent, int targetWidth, int targetHeight, float pixelRatio = 1f)
         {
-            // Create SKSvg and render to SKSurface
-            using var svg = new SKSvg();
-            var picture = svg.FromSvg(svgContent); // returns SKPicture or null depending on parsing
+            var outWidth = (int)Math.Max(1, Math.Round(targetWidth * pixelRatio));
+            var outHeight = (int)Math.Max(1, Math.Round(targetHeight * pixelRatio));
 
-            using var surface = SKSurface.Create(new SKImageInfo(width, height));
+            using var svg = new SKSvg();
+            var picture = svg.FromSvg(svgContent);
+
+            using var surface = SKSurface.Create(new SKImageInfo(outWidth, outHeight));
             var canvas = surface.Canvas;
 
+            // Set background (white). ถ้าต้องการ transparency ให้ใช้ SKColors.Transparent
             canvas.Clear(SKColors.White);
 
             if (picture != null)
             {
+                var bounds = picture.CullRect;
+                float picW = bounds.Width > 0 ? (float)bounds.Width : (float)targetWidth;
+                float picH = bounds.Height > 0 ? (float)bounds.Height : (float)targetHeight;
+
+                var scaleX = outWidth / picW;
+                var scaleY = outHeight / picH;
+                var scale = Math.Min(scaleX, scaleY);
+
+                var scaledPicW = picW * (float)scale;
+                var scaledPicH = picH * (float)scale;
+                var tx = (outWidth - scaledPicW) / 2f - (float)bounds.Left * (float)scale;
+                var ty = (outHeight - scaledPicH) / 2f - (float)bounds.Top * (float)scale;
+
+                canvas.Save();
+                canvas.Translate(tx, ty);
+                canvas.Scale((float)scale);
                 canvas.DrawPicture(picture);
+                canvas.Restore();
             }
 
             using var image = surface.Snapshot();
             using var data = image.Encode(SKEncodedImageFormat.Png, 100);
-
             return data.ToArray();
+        }
+
+        // Helper: read font file (ttf/otf) and return base64 string
+        private string? EmbedFontBase64(string fontPath)
+        {
+            // If relative path given, resolve to content root
+            if (!Path.IsPathRooted(fontPath))
+            {
+                var baseDir = AppContext.BaseDirectory; // application base
+                fontPath = Path.Combine(baseDir, fontPath.Replace('/', Path.DirectorySeparatorChar));
+            }
+
+            if (!System.IO.File.Exists(fontPath)) return null;
+
+            var bytes = System.IO.File.ReadAllBytes(fontPath);
+            return Convert.ToBase64String(bytes);
+        }
+
+        // Helper: escape basic XML entities for texts
+        private string EscapeXml(string? s)
+        {
+            if (string.IsNullOrEmpty(s)) return "";
+            return s.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;").Replace("\"", "&quot;").Replace("'", "&apos;");
         }
     }
 }
