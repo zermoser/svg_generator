@@ -12,8 +12,20 @@ namespace InsuranceSvgGenerator.Controllers
     {
         private readonly Dictionary<int, int> _yieldHeight = new()
         {
-            [-1] = 15, [0] = 25, [1] = 35, [2] = 45, [3] = 55, [4] = 65,
-            [5] = 75, [6] = 85, [7] = 95, [8] = 105, [9] = 115, [10] = 125, [11] = 250, [99] = 0
+            [-1] = 15,
+            [0] = 25,
+            [1] = 35,
+            [2] = 45,
+            [3] = 55,
+            [4] = 65,
+            [5] = 75,
+            [6] = 85,
+            [7] = 95,
+            [8] = 105,
+            [9] = 115,
+            [10] = 125,
+            [11] = 250,
+            [99] = 0
         };
 
         private readonly Dictionary<string, Dictionary<string, string>> _textResources = new()
@@ -91,8 +103,8 @@ namespace InsuranceSvgGenerator.Controllers
                 StringSplitOptions.RemoveEmptyEntries);
             var code = planCodeParts.Length > 0 ? planCodeParts[0] : paramsModel.PlanCode;
 
-            return code == "MC" 
-                ? GenerateMcSvg(quotation, language, paramsModel) 
+            return code == "MC"
+                ? GenerateMcSvg(quotation, language, paramsModel)
                 : GenerateStandardSvg(quotation, language, paramsModel, code);
         }
 

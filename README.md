@@ -2,6 +2,8 @@
 
 This is a minimal .NET 8 Web API project containing `InsuranceSvgController` that generates SVG content from a JSON quotation payload.
 
+เป็นโปรเจกต์ Mockup เท่านั้น ไม่มีการเชื่อมต่อฐานข้อมูลหรือบริการภายนอกใด ๆ เลยไม่ได้ทำเป็น Controller Service Model ดี ๆ
+
 ## Requirements
 - .NET 8 SDK installed
 
@@ -17,51 +19,108 @@ This is a minimal .NET 8 Web API project containing `InsuranceSvgController` tha
 
 ```json
 {
-  "quotation": {
-    "proSelection": {
-      "siModel": {
-        "planCode": "SP10",
-        "saHeaderType": 0,
-        "saText": 0,
-        "steps": [
-          { "lastPayment": false, "next": 1, "year": "1", "level": 0 },
-          { "lastPayment": false, "next": 1, "year": "2", "level": 1 },
-          { "lastPayment": true, "next": 1, "year": "3", "level": 2 }
+  "Quotation": {
+    "ProSelection": {
+      "SiModel": {
+        "PlanCode": "MC10",
+        "SaHeaderType": 0,
+        "SaText": 0,
+        "SaText2": 0,
+        "SaText3": 0,
+        "SaText4": 0,
+        "Steps": [
+          {
+            "LastPayment": false,
+            "Next": 1,
+            "Year": "1",
+            "Level": 0,
+            "DivideSa": false
+          },
+          {
+            "LastPayment": true,
+            "Next": 1,
+            "Year": "2",
+            "Level": 1,
+            "DivideSa": false
+          },
+          {
+            "LastPayment": false,
+            "Next": 2,
+            "Year": "3",
+            "Level": 2,
+            "DivideSa": false
+          }
         ],
-        "layoutBox": { "width": 600, "height": 400 },
-        "msgBox": { "width": 300, "height": 60, "x": 0, "y": 0 },
-        "smallSpace": 30,
-        "warpGap": 5,
-        "warpSpace": 50,
-        "warpHeight": 20,
-        "graphXPadding": 50,
-        "graphYPadding": 20,
-        "marker": { "markerRefX": 5, "markerRefY": 5, "markerWidth": 6, "markerHeight": 6 },
-        "strokeWidth": 2,
-        "fontSize": { "msgBoxFontSize": 14, "yearLabelFontSize": 12, "yAxisFontSize": 12, "atAgeLabelFontSize": 10, "premiumEndFontSize": 12 },
-        "labelArrowPadding": 5,
-        "labelYearPadding": 10,
-        "labelPremiumPadding": 5,
-        "arrowPadding": 10,
-        "arrowPremiumLength": 30,
-        "textLabelHeight": 15,
-        "xAxisLabelOffset": 20,
-        "yearMarker": { "r": 3 },
-        "remark": true
+        "LayoutBox": {
+          "Width": 500,
+          "Height": 300
+        },
+        "MsgBox": {
+          "Width": 300,
+          "Height": 50,
+          "X": 100,
+          "Y": 0
+        },
+        "SmallSpace": 20,
+        "WarpGap": 5,
+        "WarpSpace": 30,
+        "WarpHeight": 15,
+        "GraphXPadding": 50,
+        "GraphYPadding": 20,
+        "Marker": {
+          "MarkerRefX": 5,
+          "MarkerRefY": 5,
+          "MarkerWidth": 6,
+          "MarkerHeight": 6
+        },
+        "StrokeWidth": 1,
+        "FontSize": {
+          "MsgBoxFontSize": 12,
+          "YearLabelFontSize": 12,
+          "YAxisFontSize": 12,
+          "AtAgeLabelFontSize": 10,
+          "PremiumEndFontSize": 12
+        },
+        "LabelArrowPadding": 5,
+        "LabelYearPadding": 10,
+        "LabelPremiumPadding": 5,
+        "ArrowPadding": 10,
+        "ArrowPremiumLength": 20,
+        "TextLabelHeight": 15,
+        "XAxisLabelOffset": 20,
+        "YearMarker": {
+          "R": 3
+        },
+        "Remark": true
       },
-      "sa": 1000000,
-      "planPremiumTerm": 10
+      "SA": 1000000,
+      "PlanPremiumTerm": 10
     },
-    "cvRate": {
-      "data1": [
-        { "endyear": 1, "coverage": 1000000, "cash_benefit": 50000 },
-        { "endyear": 2, "coverage": 1100000, "cash_benefit": 60000 },
-        { "endyear": 3, "coverage": 1200000, "cash_benefit": 70000 }
-      ]
+    "CVRate": {
+      "Data1": [
+        {
+          "EndYear": 1,
+          "Coverage": 1000000,
+          "CashBenefit": 0
+        },
+        {
+          "EndYear": 2,
+          "Coverage": 2000000,
+          "CashBenefit": 50000
+        },
+        {
+          "EndYear": 3,
+          "Coverage": 3000000,
+          "CashBenefit": 100000
+        }
+      ],
+      "Data2": [],
+      "Data3": [],
+      "Data4": []
     },
-    "insAge": 35
+    "InsAge": 30
   },
-  "language": "th"
+  "Language": "th"
 }
 ```
 
