@@ -17,111 +17,30 @@ This is a minimal .NET 8 Web API project containing `InsuranceSvgController` tha
 3. The API will be available at `https://localhost:5001` (or the port printed in the console).
 4. Example request (POST JSON to `/api/InsuranceSvg/generate`):
 
-```json
+```json mock for request
 {
-  "Quotation": {
-    "ProSelection": {
-      "SiModel": {
-        "PlanCode": "MC10",
-        "SaHeaderType": 0,
-        "SaText": 0,
-        "SaText2": 0,
-        "SaText3": 0,
-        "SaText4": 0,
-        "Steps": [
-          {
-            "LastPayment": false,
-            "Next": 1,
-            "Year": "1",
-            "Level": 0,
-            "DivideSa": false
-          },
-          {
-            "LastPayment": true,
-            "Next": 1,
-            "Year": "2",
-            "Level": 1,
-            "DivideSa": false
-          },
-          {
-            "LastPayment": false,
-            "Next": 2,
-            "Year": "3",
-            "Level": 2,
-            "DivideSa": false
-          }
-        ],
-        "LayoutBox": {
-          "Width": 500,
-          "Height": 300
-        },
-        "MsgBox": {
-          "Width": 300,
-          "Height": 50,
-          "X": 100,
-          "Y": 0
-        },
-        "SmallSpace": 20,
-        "WarpGap": 5,
-        "WarpSpace": 30,
-        "WarpHeight": 15,
-        "GraphXPadding": 50,
-        "GraphYPadding": 20,
-        "Marker": {
-          "MarkerRefX": 5,
-          "MarkerRefY": 5,
-          "MarkerWidth": 6,
-          "MarkerHeight": 6
-        },
-        "StrokeWidth": 1,
-        "FontSize": {
-          "MsgBoxFontSize": 12,
-          "YearLabelFontSize": 12,
-          "YAxisFontSize": 12,
-          "AtAgeLabelFontSize": 10,
-          "PremiumEndFontSize": 12
-        },
-        "LabelArrowPadding": 5,
-        "LabelYearPadding": 10,
-        "LabelPremiumPadding": 5,
-        "ArrowPadding": 10,
-        "ArrowPremiumLength": 20,
-        "TextLabelHeight": 15,
-        "XAxisLabelOffset": 20,
-        "YearMarker": {
-          "R": 3
-        },
-        "Remark": true
-      },
-      "SA": 1000000,
-      "PlanPremiumTerm": 10
-    },
-    "CVRate": {
-      "Data1": [
-        {
-          "EndYear": 1,
-          "Coverage": 1000000,
-          "CashBenefit": 0
-        },
-        {
-          "EndYear": 2,
-          "Coverage": 2000000,
-          "CashBenefit": 50000
-        },
-        {
-          "EndYear": 3,
-          "Coverage": 3000000,
-          "CashBenefit": 100000
-        }
-      ],
-      "Data2": [],
-      "Data3": [],
-      "Data4": []
-    },
-    "InsAge": 30
-  },
-  "Language": "th"
+  "Width": 1000,
+  "Height": 320,
+  "MarginHorizontal": 50,
+  "Color": "#2c8592",
+  "DotFill": "#c9e04a",
+  "Lang": "th",
+  "ZigzagAtIndices": [4,5,7],
+  "ZigzagMaxAmplitude": 20.0,
+  "Data": [
+    {"Id":"1","Label":"1","Year":"1","Next":1},
+    {"Id":"2","Label":"2","Year":"2","Next":1},
+    {"Id":"5","Label":"5","Year":"5","Next":1},
+    {"Id":"10","Label":"10","Year":"10","Next":1},
+    {"Id":"15","Label":"15","Year":"15","Next":1},
+    {"Id":"20","Label":"20","Year":"20","Next":1},
+    {"Id":"60","Major":true,"Year":"A60","Next":1},
+    {"Id":"70","Major":true,"Year":"A70","Next":1},
+    {"Id":"80","Major":true,"Year":"A80","Next":1},
+    {"Id":"90","Major":true,"Value":"150,000","Year":"A90","Next":1,"LastPayment":true}
+  ]
 }
+
 ```
 
 ## Notes
