@@ -21,3 +21,6 @@ obj/
 *.log
 .DS_Store
 Thumbs.db
+
+# Puppeteer Chromium
+.local-chromium/
